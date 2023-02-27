@@ -125,3 +125,5 @@ ComponentHelper.SetRootActive()
 mode = ViewHelper.ViewProjection.Top
 result = ViewHelper.SetProjection(mode)
 ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
+
+# Split Funtion Added 2023/02/27
