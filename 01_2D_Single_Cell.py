@@ -1,6 +1,6 @@
 # 01 2D Single Cell
 # Create two-dimensional fluid region
-# Emrah Dursun. 23/02/203. 
+# Emrah Dursun. 23/02/2023. 
 # Python Script, API Version = V22 Beta
 from SpaceClaim.Api.V22.Geometry import Point
 import math
