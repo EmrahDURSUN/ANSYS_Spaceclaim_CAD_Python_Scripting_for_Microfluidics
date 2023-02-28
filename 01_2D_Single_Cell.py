@@ -1,6 +1,6 @@
 # 01 2D Single Cell
 # Create two-dimensional fluid region
-# Emrah Dursun. 23/02/2023. 
+# Emrah Dursun. 23/02/203. 
 # Python Script, API Version = V22 Beta
 from SpaceClaim.Api.V22.Geometry import Point
 import math
@@ -107,23 +107,8 @@ RenameObject.Execute(BodySelection.Create(singleCellTwoDComp.Content.Bodies[0]),
 
 #######################################################################
 
-# Split half for faster simulation. If you wish to have complete single structure, comment this section with ctrl+k
-
-# Create Datum Plane
-result = DatumPlaneCreator.Create( Point.Origin, Direction.DirX ) 
-# Slice Bodies by Plane
-result = SplitBody.ByCutter ( Selection.Create(singleCellTwoDComp.Content.Bodies[0]) , Selection.Create(singleCellTwoDComp.Content.DatumPlanes[0]))
-# Remove other half surface
-result = Combine.RemoveRegions(BodySelection.Create(singleCellTwoDComp.Content.Bodies[1]))
-# Delete Datum Plane
-result = Delete.Execute(Selection.Create(singleCellTwoDComp.Content.DatumPlanes[0]))
-
-#######################################################################
-
 Selection.Clear()
 ComponentHelper.SetRootActive()
 mode = ViewHelper.ViewProjection.Top
 result = ViewHelper.SetProjection(mode)
 ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
-
-# Split Funtion Added 2023/02/27
