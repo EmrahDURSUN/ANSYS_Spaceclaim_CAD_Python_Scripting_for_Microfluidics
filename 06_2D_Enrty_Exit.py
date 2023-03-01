@@ -1,6 +1,6 @@
 # 06 2D Entry Exit
 # Create the fluid domain of the entry and exit channel structures in two dimensions.
-# Emrah Dursun. 23/02/2023.
+# Emrah Dursun. 01/00/2023.
 from SpaceClaim.Api.V22.Geometry import Point
 import math
 
@@ -10,9 +10,9 @@ periodicity=Parameters.Periodicity
 subThick=Parameters.SubsThickness
 hCr1=Parameters.ChromiumForAdhesion
 hAu=Parameters.GoldLayer
-hCr2=Parameters.ChromiumForSurfacePassivation
+#hCr2=Parameters.ChromiumForSurfacePassivationm
 radius=Parameters.Radius
-width=Parameters.Width
+width=Parameters.Width 
 angle=Parameters.Angle
 oangle=Parameters.OpeningAngle
 hEtch=Parameters.EtchHeight
@@ -24,6 +24,9 @@ numXElements=Parameters.X_direction_repeat
 numZElements=Parameters.Z_direction_repeat
 fluidChipLength = Parameters.FluidChip_Length
 fluidChipWidth = Parameters.FluidChip_Width
+scaleFactorY= Parameters.Scale_Channel_Along_Y
+scaleFactorX=1
+numOfEntryPins = Parameters.Num_of_Entry_Pins
 # End Parameters
 
 #ClearAll()
