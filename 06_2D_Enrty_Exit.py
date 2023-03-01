@@ -40,11 +40,11 @@ ComponentHelper.SetActive(pdmsComp)
 # half Length half widht
 hWi = fluidChipWidth/2
 hLe = fluidChipLength/2
-circleR = MM(0.5)
+circleRadius = MM(0.5)
 circleGap = MM(3)
 circleStartY = -(-hLe+(2*circleGap))
 #number of inlets 4
-numInlet= 4
+numInlet= numOfEntryPins
 circleStartX= -hWi + ( ( fluidChipWidth-((numInlet-1)*circleGap)) / 2 )
 
 # Parameter modifications for entering Channels
@@ -93,7 +93,7 @@ while m < 2:
     while t < numInlet:
         # Sketch Circle
         origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
-        result = SketchCircle.Create(origin, circleR)
+        result = SketchCircle.Create(origin, circleRadius)
         t+=1
     circleStartY=-1*circleStartY
     m+=1

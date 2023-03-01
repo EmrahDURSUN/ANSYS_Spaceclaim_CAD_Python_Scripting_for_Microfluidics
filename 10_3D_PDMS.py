@@ -28,6 +28,7 @@ numXElements=Parameters.X_direction_repeat
 numZElements=Parameters.Z_direction_repeat
 fluidChipLength = Parameters.FluidChip_Length
 fluidChipWidth = Parameters.FluidChip_Width
+numOfEntryPins = Parameters.Num_of_Entry_Pins
 # End Parameters
 
 # Create Component and activate it
@@ -39,18 +40,18 @@ ComponentHelper.SetActive(pdmsComp)
 # half Length half widht
 hWi = fluidChipWidth/2
 hLe = fluidChipLength/2
-circleR = MM(0.5)
+circleRadius = MM(0.5)
 circleGap = MM(3)
 circleStartY = -(-hLe+(2*circleGap))
 #number of inlets 4
-numInlet= 4
+numInlet= numOfEntryPins
 circleStartX= -hWi + ( ( fluidChipWidth-((numInlet-1)*circleGap)) / 2 )
 
 # Set Sketch Plane
 sectionPlane = Plane.PlaneXY
 result = ViewHelper.SetSketchPlane(sectionPlane, None)
 
-# Sketch Rectangle
+# Sketch PDMS Rectangle Boundary
 point1 = Point2D.Create(-hWi,-hLe)
 point2 = Point2D.Create(hWi,-hLe)
 point3 = Point2D.Create(hWi,hLe)
@@ -63,7 +64,7 @@ while m < 2:
     while t < numInlet:
         # Sketch Circle
         origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
-        result = SketchCircle.Create(origin, circleR)
+        result = SketchCircle.Create(origin, circleRadius)
         t+=1
     circleStartY=-1*circleStartY
     m+=1

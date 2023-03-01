@@ -479,22 +479,22 @@ print(finalChannelWidth)
 sectionPlane = Plane.PlaneXY
 result = ViewHelper.SetSketchPlane(sectionPlane, None)
 
-# run nested while loops to create circles at their colcations
-m=0
-while m < 2:
-    t=0
-    while t < numInlet:
-        # Sketch Circle
-        origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
-        result = SketchCircle.Create(origin, circleRadius)
-        t+=1
-    circleStartY=-1*circleStartY
-    m+=1
+## run nested while loops to create circles at the entry and exit locations
+#m=0
+#while m < 2:
+#    t=0
+#    while t < numInlet:
+#        # Sketch Circle
+#        origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
+#        result = SketchCircle.Create(origin, circleRadius)
+#        t+=1
+#    circleStartY=-1*circleStartY
+#    m+=1
 
-# Solidify Sketch
-mode = InteractionMode.Solid
-result = ViewHelper.SetViewMode(mode, None)
-# EndBlock
+## Solidify Sketch
+#mode = InteractionMode.Solid
+#result = ViewHelper.SetViewMode(mode, None)
+## EndBlock
 
 ComponentHelper.SetRootActive()
 # comp = ComponentHelper.CopyToRoot(comp)
@@ -716,8 +716,9 @@ while n <numOfEnteringChannelLayers:
     
 multiEnteringChannelComp.Content.Bodies[0].Delete()
 
-selection = BodySelection.Create(multiEnteringChannelComp.Content.Bodies)
-result = Combine.Merge(selection)
+if multiEnteringChannelComp.Content.Bodies.Count > 1 :
+    selection = BodySelection.Create(multiEnteringChannelComp.Content.Bodies)
+    result = Combine.Merge(selection)
 
 RenameObject.Execute(BodySelection.Create(multiEnteringChannelComp.Content.Bodies[0]), 'Entry Channels')
 
