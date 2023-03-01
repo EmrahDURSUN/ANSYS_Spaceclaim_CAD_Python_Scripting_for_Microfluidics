@@ -50,12 +50,12 @@ scaleFactorY= Parameters.Scale_Channel_Along_Y
 
 strech = scaleFactorY
 distanceCellY = (numZElements*periodicity)/2
-numOfChannelLayers = math.log(numXElements/2,2)
+numOfChannelLayers = math.log(numXElements,2)
 
 # Determine the distance between entering inlet and channel inlet
 distanceChannelsY = 0
 z = 0
-while z <= numOfChannelLayers:
+while z < numOfChannelLayers:
     result = ( 2 * periodicity ) * (math.pow(2,z))
     distanceChannelsY += result    
 #    if z > 0:
@@ -70,7 +70,8 @@ distanceGapEnterCelChannelY= circleStartY - distanceSumCellChannelY
 
 print(distanceGapEnterCelChannelY)
 
-
+finalChannelWidth = channelWidth * math.pow(2, numOfChannelLayers)
+print(finalChannelWidth)
 
 # Set Sketch Plane
 sectionPlane = Plane.PlaneXY
@@ -108,9 +109,9 @@ result = ViewHelper.SetViewMode(mode, None)
 
 
 ###########
-mode = ViewHelper.ViewProjection.Top
-result = ViewHelper.SetProjection(mode)
-ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
+#mode = ViewHelper.ViewProjection.Top
+#result = ViewHelper.SetProjection(mode)
+#ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
 
 ComponentHelper.SetRootActive()
 # comp = ComponentHelper.CopyToRoot(comp)
@@ -211,7 +212,8 @@ def CurvedChannel (splEn, splLen, channelWidthS, periodicityS):
     # Solidify Sketch
     ViewHelper.SetViewMode(InteractionMode.Solid, None)
 
-cwS =circleR/2
+numOfEnteringChannelLayers=math.log(numInlet,2)
+cwS = finalChannelWidth / math.pow(2, numOfEnteringChannelLayers)
 lengthOfSpline = MM(1)
 CurvedChannel(MM(0.001), MM( lengthOfSpline ), MM(cwS), MM(circleGap))
 
@@ -275,7 +277,6 @@ scaleFactorYS = 1
 strechS=scaleFactorYS
 periodicityS = circleGap
 perS = circleGap/2
-cwS =circleR/2
 # Determine the *Scale factor for Entering splines channels*
 distanceEnteringChannelsY = 0
 z = 0
@@ -301,7 +302,6 @@ strechS=scaleFactorYS
 
 periodicityS = lengthOfSpline
 perS = circleGap/2
-cwS =circleR/2
 
 t = 0
 numOfEnteringChannelLayers=math.log(numInlet,2)
