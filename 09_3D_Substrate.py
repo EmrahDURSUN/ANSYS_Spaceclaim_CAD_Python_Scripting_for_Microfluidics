@@ -1,6 +1,6 @@
 # 09 3D Substrate 
-# Create the combined final fluid domain structures in two dimensions.
-# Emrah Dursun. 23/02/2023. 
+# Create 3D etched substrate
+# Emrah Dursun. 01/03/2023. 
 # Python Script, API Version = V22
 from SpaceClaim.Api.V22.Geometry import Point
 import math
@@ -31,6 +31,7 @@ fluidChipLength = Parameters.FluidChip_Length
 fluidChipWidth = Parameters.FluidChip_Width
 scaleFactorY= Parameters.Scale_Channel_Along_Y
 scaleFactorX=1
+numOfEntryPins = Parameters.Num_of_Entry_Pins
 # End Parameters
 
 # Create Component and activate it
@@ -97,6 +98,7 @@ body = result.CreatedBody.SetName('Channel')
 ## EndBlock
 #seloc =  Selection.CreateByNames('surface1')
 
+# Merge bodies along Y Column
 num = multiCellTwoDComp.Content.Bodies.Count-1
 t=0
 while t < num:
@@ -328,7 +330,7 @@ result = Move.Translate(selection, direction, offSetXdirection, options)
 
 # Make a body list
 bodyList = List[IDocObject]()
-bodyList.Add(baseBody)ppp
+bodyList.Add(baseBody)
 
 # Declare a function to copy, translate and scale the base steps
 def CopyAndTranslate_Scale(body, translation, scaleFactorX, scaleFactorY):
@@ -404,50 +406,46 @@ ViewHelper.SetObjectVisibility(selection, visibility, inSelectedView, faceLevel)
 
 #######################################################################
 
-# Create a componet and move all bodies in it
-#multiCellChannelComp = ComponentHelper.CreateAtRoot("Multi-Cell-Channel")
-#selectedBodies = BodySelection.Create(GetRootPart().GetAllBodies())
-#result = ComponentHelper.MoveBodiesToComponent( selectedBodies ,multiCellChannelComp, False , None)
-#multiChannelComp.Delete()
-#multiCellTwoDComp.Delete()
-
-# Create a componet and move all bodies in it and Merge them
+# new approach to Merge Bodies
+numCellBodies = multiCellTwoDComp.Content.Bodies.Count-1
+while numCellBodies >=0:
+    targets = BodySelection.Create(multiChannelComp.Content.Bodies[0])
+    tools = BodySelection.Create(multiCellTwoDComp.Content.Bodies[numCellBodies])
+    result = Combine.Merge(targets, tools)
+    numCellBodies -=1
+    if numCellBodies == -1:
+        targets = BodySelection.Create(multiChannelComp.Content.Bodies[0])
+        tools = BodySelection.Create(multiChannelComp.Content.Bodies[1])
+        result = Combine.Merge(targets, tools)
+        break
+    
 multiCellChannelComp = ComponentHelper.CreateAtRoot("Multi-Cell-Channel")
-
-sel1 = Selection.Create(multiCellTwoDComp.Content.Bodies)
-sel2  = Selection.Create(multiChannelComp.Content.Bodies)
-selectedBodies = Selection.SelectAll(sel1 + sel2)
+selectedBodies  = Selection.Create(multiChannelComp.Content.Bodies)
 result = ComponentHelper.MoveBodiesToComponent ( selectedBodies ,multiCellChannelComp, False , None)
 multiChannelComp.Delete()
 multiCellTwoDComp.Delete()
+    
+# EndBlock
 
-selectedBodies = BodySelection.Create(multiCellChannelComp.Content.Bodies)
-result = Combine.Merge(selectedBodies)
+######################################################################################################
 
-################
-
-## Create a parent componet
-#result = ComponentHelper.CreateAtRoot("Multi-Cell-Channel")
-#selectedCreated = Selection.CreateByNames("Multi-Cell-Channel")
-#selectedComp = ComponentSelection.Create( multiChannelComp , multiCellTwoDComp)
-#result = ComponentHelper.MoveBodiesToComponent (selectedComp, selectedCreated)
-#Selection.Clear()
-
-#######################################################################
+######################################################################################################
 
 # Create Component and activate it
-enterExitComp = ComponentHelper.CreateAtRoot("2D_Enter_Exit")
+enterExitComp = ComponentHelper.CreateAtRoot("2D_Entry_Exit_Pins")
 ComponentHelper.SetActive(enterExitComp)
 
 # Parameter modifications
 # half Length half widht
 hWi = fluidChipWidth/2
 hLe = fluidChipLength/2
-circleR = MM(0.5)
+
+#
+circleRadius = MM(0.5)
 circleGap = MM(3)
 circleStartY = -(-hLe+(2*circleGap))
 #number of inlets 4
-numInlet= 4
+numInlet = numOfEntryPins
 circleStartX= -hWi + ( ( fluidChipWidth-((numInlet-1)*circleGap)) / 2 )
 
 # Parameter modifications for entering Channels
@@ -456,16 +454,14 @@ scaleFactorY= Parameters.Scale_Channel_Along_Y
 
 strech = scaleFactorY
 distanceCellY = (numZElements*periodicity)/2
-numOfChannelLayers = math.log(numXElements/2,2)
+numOfChannelLayers = math.log(numXElements,2)
 
 # Determine the distance between entering inlet and channel inlet
 distanceChannelsY = 0
 z = 0
-while z <= numOfChannelLayers:
+while z < numOfChannelLayers:
     result = ( 2 * periodicity ) * (math.pow(2,z))
     distanceChannelsY += result    
-#    if z > 0:
-#        BlockBody.Create( Point.Origin, Point.Create(MM(10), MM(total), MM(10)), ExtrudeType.ForceIndependent)
     strech*=2
     z = z + 1
 
@@ -476,47 +472,29 @@ distanceGapEnterCelChannelY= circleStartY - distanceSumCellChannelY
 
 print(distanceGapEnterCelChannelY)
 
-
+finalChannelWidth = channelWidth * math.pow(2, numOfChannelLayers)
+print(finalChannelWidth)
 
 # Set Sketch Plane
 sectionPlane = Plane.PlaneXY
 result = ViewHelper.SetSketchPlane(sectionPlane, None)
 
-## Substrate - Sketch Rectangle
-#point1 = Point2D.Create(-hWi,-hLe)
-#point2 = Point2D.Create(hWi,-hLe)
-#point3 = Point2D.Create(hWi,hLe)
-#result = SketchRectangle.Create(point1, point2, point3)
+## run nested while loops to create circles at the entry and exit locations
+#m=0
+#while m < 2:
+#    t=0
+#    while t < numInlet:
+#        # Sketch Circle
+#        origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
+#        result = SketchCircle.Create(origin, circleRadius)
+#        t+=1
+#    circleStartY=-1*circleStartY
+#    m+=1
 
-# run nested while loops to create circles at their colcations
-m=0
-while m < 2:
-    t=0
-    while t < numInlet:
-        # Sketch Circle
-        origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
-        result = SketchCircle.Create(origin, circleR)
-        t+=1
-    circleStartY=-1*circleStartY
-    m+=1
-
-# Solidify Sketch
-mode = InteractionMode.Solid
-result = ViewHelper.SetViewMode(mode, None)
-# EndBlock
-
-## Extrude 1 Face
-#selection=FaceSelection.Create( enterExitComp.Content.Bodies[0].Faces[0] )
-#options = ExtrudeFaceOptions()
-#options.ExtrudeType = ExtrudeType.Cut
-#result = ExtrudeFaces.Execute(selection, -subThick, options)
+## Solidify Sketch
+#mode = InteractionMode.Solid
+#result = ViewHelper.SetViewMode(mode, None)
 ## EndBlock
-
-
-###########
-mode = ViewHelper.ViewProjection.Top
-result = ViewHelper.SetProjection(mode)
-ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
 
 ComponentHelper.SetRootActive()
 # comp = ComponentHelper.CopyToRoot(comp)
@@ -526,61 +504,62 @@ ComponentHelper.SetRootActive()
 ########################################################################################
 
 # Create Component and activate it
-multiEnteringChannelComp = ComponentHelper.CreateAtRoot("2D Multiple Entering Channel2")
+multiEnteringChannelComp = ComponentHelper.CreateAtRoot("2D Multiple Entry Exit Channel")
 ComponentHelper.SetActive(multiEnteringChannelComp)
 
 scaleFactorX=1
 scaleFactorY= Parameters.Scale_Channel_Along_Y
 
-
 def CurvedChannel (splEn, splLen, channelWidthS, periodicityS):    
     # Set Sketch Plane
     result = ViewHelper.SetSketchPlane(Plane.PlaneXY)
+    chamferRadius = splLen - UM(200)
     cwS=channelWidthS
     perS = periodicityS/2
     # Define Points for Sketch Splines
     
     startA = Point.Create(  MM(0),                             0,           0)
     startAa= Point.Create(  MM(0),                             splEn ,      0)
+    
     endA   = Point.Create(  MM(cwS),                              0,           0)
     endAa  = Point.Create(  MM(cwS),                              splEn,       0)
+    
     startB = Point.Create(  MM(perS-cwS/2),         splLen,      0)
     startBb= Point.Create(  MM(perS-cwS/2),         splLen-splEn,0)
+    
     endB   = Point.Create(  MM(perS+cwS/2),                          splLen,      0)
     endBb  = Point.Create(  MM(perS+cwS/2),                          splLen-splEn,0)
+    
     startC = Point.Create(  MM(periodicityS),        0,              0)
     startCc= Point.Create(  MM(periodicityS),        splEn,          0)    
+    
     endC   = Point.Create(  MM(periodicityS+cwS),     0,              0)
     endCc  = Point.Create(  MM(periodicityS+cwS),     splEn,          0)    
+    
     startD = Point.Create(  MM(perS+cwS/2),           splLen,         0)
-    startDd= Point.Create(  MM(perS+cwS/2),           splLen-splEn,   0)    
+    startDd= Point.Create(  MM(perS+cwS/2),           splLen-splEn,   0)
+    
     endD   = Point.Create(  MM(perS+3*cwS/2), splLen,         0)
     endDd  = Point.Create(  MM(perS+3*cwS/2), splLen-splEn,   0)    
     
+   #these are just the point locations that i want     
+    endRrrrrrr       = Point.Create( MM(perS+cwS/2) - UM(740) ,    chamferRadius - UM(335) ,        0)
+    endRrrrrr       = Point.Create( MM(perS+cwS/2) - UM(417) ,    chamferRadius - UM(236) ,        0)
+    endRrrrr        = Point.Create( MM(perS+cwS/2) - UM(60) ,      chamferRadius - UM(35.5),         0)
+    endRrrr         = Point.Create( MM(perS+cwS/2) - UM(42) ,      chamferRadius - UM(15.5),         0)
+    endRrr          = Point.Create( MM(perS+cwS/2) - UM(32),      chamferRadius - UM(6.5),          0)
+    endRr           = Point.Create( MM(perS+cwS/2) - UM(20),         chamferRadius - UM(2),           0)
+    endR            = Point.Create( MM(perS+cwS/2) ,                    chamferRadius,                         0)
     
-#    #these are just the point locations that i want     
-#    endRrrrrrrrr    = Point.Create( MM(per+cw/2) - UM(120.0134) ,     splLen - UM(474.359) ,  0)
-#    endRrrrrrrr     = Point.Create( MM(per+cw/2) - UM(74.648) ,       splLen - UM(348.2007),  0)
-#    endRrrrrrr      = Point.Create( MM(per+cw/2) - UM(37.8512) ,      splLen - UM(235.23) ,   0)
-#    endRrrrrr       = Point.Create( MM(per+cw/2) - UM(20.8406) ,      splLen - UM(170.121) ,   0)
-#    endRrrrr        = Point.Create( MM(per+cw/2) - UM(16.367) ,      splLen - UM(149.664),         0)
-#    endRrrr         = Point.Create( MM(per+cw/2) - UM(12) ,      splLen - UM(135),         0)
-#    endRrr          = Point.Create( MM(per+cw/2) - UM(7.4),         splLen - UM(128),        0)
-#    endRr           = Point.Create( MM(per+cw/2) - UM(2),             splLen - UM(124.7),           0)
-#    endR            = Point.Create( MM(per+cw/2) ,                    splLen - UM(124.5),           0)
-    
-#    #these are just the point locations that i want 
-#    endMrrrrrrrr    = Point.Create( MM(per+cw/2) + UM(120.0134) ,     splLen - UM(474.359) ,  0)
-#    endMrrrrrrr     = Point.Create( MM(per+cw/2) + UM(74.648) ,       splLen - UM(348.2007),  0)
-#    endMrrrrrr      = Point.Create( MM(per+cw/2) + UM(37.8512) ,      splLen - UM(235.23) ,   0)
-#    endMrrrrr       = Point.Create( MM(per+cw/2) + UM(20.8406) ,      splLen - UM(170.121) ,   0)
-#    endMrrrr        = Point.Create( MM(per+cw/2) + UM(16.367) ,      splLen - UM(149.66),         0)
-#    endMrrr         = Point.Create( MM(per+cw/2) + UM(12) ,      splLen - UM(135),         0)
-#    endMrr          = Point.Create( MM(per+cw/2) + UM(7.4),         splLen - UM(128),        0)
-#    endMr           = Point.Create( MM(per+cw/2) + UM(2),             splLen - UM(124.7),           0)
-#    endM            = Point.Create( MM(per+cw/2) ,                    splLen - UM(124.5),           0)
+    #these are just the point locations that i want 
+    endMrrrrrr       = Point.Create( MM(perS+cwS/2) + UM(740) ,   chamferRadius - UM(335) ,    0)
+    endMrrrrr       = Point.Create( MM(perS+cwS/2) + UM(417) ,   chamferRadius - UM(236) ,    0)
+    endMrrrr        = Point.Create( MM(perS+cwS/2) + UM(60) ,     chamferRadius - UM(35.5),     0)
+    endMrrr         = Point.Create( MM(perS+cwS/2) + UM(42) ,     chamferRadius - UM(15.5),     0)
+    endMrr          = Point.Create( MM(perS+cwS/2) + UM(32),     chamferRadius - UM(6.5),        0)
+    endMr           = Point.Create( MM(perS+cwS/2) + UM(20),        chamferRadius - UM(2),           0)
+    endM            = Point.Create( MM(perS+cwS/2) ,                    chamferRadius,                         0)
       
-    
     # Sketch Line 1st and 2nd
     SketchLine.Create(startA, endA)
     SketchLine.Create(startB, endB)
@@ -593,21 +572,21 @@ def CurvedChannel (splEn, splLen, channelWidthS, periodicityS):
     points = [startA, startAa, startBb, startB]
     SketchNurbs.CreateFrom3DPoints(False, points)
     
-    # Sketch Spline 2nd
-    points = [endA, endAa,  endBb, endB]
-    SketchNurbs.CreateFrom3DPoints(False, points)
-
-#    #Sketch Spline 2nd Curved        
-#    points = [endA, endAa, endRrrrrrrrr, endRrrrrrrr, endRrrrrrr,  endRrrrrr, endRrrrr, endRrrr, endRrr, endRr, endR]
+#    # Sketch Spline 2nd
+#    points = [endA, endAa,  endBb, endB]
 #    SketchNurbs.CreateFrom3DPoints(False, points)
+
+    #Sketch Spline 2nd Curved        
+    points = [endA, endAa , endRrrrrrr, endRrrrrr, endRrrrr, endRrrr, endRrr, endRr, endR]
+    SketchNurbs.CreateFrom3DPoints(False, points)
     
-#    # Sketch Spline 3rd Curved
-#    points = [startC, startCc, endMrrrrrrrr, endMrrrrrrr, endMrrrrrr,  endMrrrrr, endMrrrr, endMrrr, endMrr, endMr, endM]
-#    SketchNurbs.CreateFrom3DPoints(False, points)
-
-    # Sketch Spline 3rd
-    points = [startC, startCc, startDd, startD]
+    # Sketch Spline 3rd Curved
+    points = [startC, startCc, endMrrrrrr, endMrrrrr, endMrrrr, endMrrr, endMrr, endMr, endM]
     SketchNurbs.CreateFrom3DPoints(False, points)
+
+#    # Sketch Spline 3rd
+#    points = [startC, startCc, startDd, startD]
+#    SketchNurbs.CreateFrom3DPoints(False, points)
     
     # Sketch Spline 4th
     points = [endC, endCc, endDd, endD]
@@ -617,18 +596,17 @@ def CurvedChannel (splEn, splLen, channelWidthS, periodicityS):
     # Solidify Sketch
     ViewHelper.SetViewMode(InteractionMode.Solid, None)
 
-cwS =circleR/2
+numOfEnteringChannelLayers=math.log(numOfEntryPins ,2)
+cwS = finalChannelWidth / math.pow(2, numOfEnteringChannelLayers)
 lengthOfSpline = MM(1)
 CurvedChannel(MM(0.001), MM( lengthOfSpline ), MM(cwS), MM(circleGap))
-
 
 # Copy and Translate the already created base steps
 def CopyAndTranslate_AlongX(body, translationX):   
     result = Copy.Execute(body)    
     if (result.Success == True):
         newBody = result.CreatedObjects[0]        
-        Move.Translate(Selection.Create(newBody), translationX, MoveOptions())
-        RenameObject.Execute(Selection.Create(newBody), 'Cell '+k.ToString())
+        Move.Translate(Selection.Create(newBody), translationX, MoveOptions())      
         return newBody
     
 #*#
@@ -667,7 +645,7 @@ def CopyAndTranslate_Scale(body, translation, scaleFactorX, scaleFactorY):
     if (result.Success == True):
         newBody = result.CreatedObjects[0]        
         Move.Translate(Selection.Create(newBody), translation, MoveOptions())        
-        position=multiEnteringChannelComp.Content.Bodies[t+1].Edges[6].GetChildren[ICurvePoint]()[0].Position
+        position=multiEnteringChannelComp.Content.Bodies[t+1].Edges[0].GetChildren[ICurvePoint]()[0].Position
         selectionScale=Selection.Create(result.CreatedObjects[0])
         #Scale along x axis but, not recommended to play wirh scaleFactorX; so it can mis allign the cell connections
         result = Scale.Execute(selectionScale,Point.Create(position.X, position.Y, position.Z), Direction.DirX ,scaleFactorX)
@@ -681,7 +659,6 @@ scaleFactorYS = 1
 strechS=scaleFactorYS
 periodicityS = circleGap
 perS = circleGap/2
-cwS =circleR/2
 # Determine the *Scale factor for Entering splines channels*
 distanceEnteringChannelsY = 0
 z = 0
@@ -700,16 +677,13 @@ while z < numOfEnteringChannelLayers:
 
 scaleFactorYS = distanceGapEnterCelChannelY / distanceEnteringChannelsY
 
-
-
 # Run a loop to make the steps along the layer height, layer numbers change respect to number of cell, under this section one can also adjust to scale along y-axis
-distanceGapEnterCelChannelY
+#distanceGapEnterCelChannelY
 
 strechS=scaleFactorYS
 
 periodicityS = lengthOfSpline
 perS = circleGap/2
-cwS =circleR/2
 
 t = 0
 numOfEnteringChannelLayers=math.log(numInlet,2)
@@ -726,6 +700,7 @@ while t < numOfEnteringChannelLayers:
 m = numInlet/2
 k=0
 n=0
+# 
 while n <numOfEnteringChannelLayers:
     stringName =str('Layer'+n.ToString())
     selectionO = Selection.CreateByNames(stringName)
@@ -741,8 +716,11 @@ while n <numOfEnteringChannelLayers:
     
 multiEnteringChannelComp.Content.Bodies[0].Delete()
 
-selection = BodySelection.Create(multiEnteringChannelComp.Content.Bodies)
-result = Combine.Merge(selection)
+if multiEnteringChannelComp.Content.Bodies.Count > 1 :
+    selection = BodySelection.Create(multiEnteringChannelComp.Content.Bodies)
+    result = Combine.Merge(selection)
+
+RenameObject.Execute(BodySelection.Create(multiEnteringChannelComp.Content.Bodies[0]), 'Entry Channels')
 
 # Create Datum Plane
 result = DatumPlaneCreator.Create(Point.Origin, Direction.DirY)
@@ -753,30 +731,41 @@ selection = BodySelection.Create(multiEnteringChannelComp.Content.Bodies[0])
 mirrorPlane = Selection.Create(multiEnteringChannelComp.Content.DatumPlanes[0])
 options = MirrorOptions()
 result = Mirror.Execute(selection, mirrorPlane, options)
+RenameObject.Execute(BodySelection.Create(multiEnteringChannelComp.Content.Bodies[1]), 'Exit Channels')
 # EndBlock
 
-######################################################################################
 
-# Create a componet and move all bodies in it and Merge them
-combinedAndMergedComp = ComponentHelper.CreateAtRoot("Combined and Merged")
+#######################################################################################
+
+#Create a parent componet and move all bodies in it
+twoDFinalComp = ComponentHelper.CreateAtRoot("2D Final")
 selectedBodies = BodySelection.Create(GetRootPart().GetAllBodies())
-result = ComponentHelper.MoveBodiesToComponent( selectedBodies ,combinedAndMergedComp , None)
+result = ComponentHelper.MoveBodiesToComponent( selectedBodies ,twoDFinalComp , False , None)
 
-selectedBodies = BodySelection.Create(combinedAndMergedComp.Content.Bodies)
-result = Combine.Merge(selectedBodies)
+numComp = GetRootPart().Components.Count
+n = numComp-1
+while 0 < numComp :
+    bodyCount = GetRootPart().Components[n].Content.Bodies.Count
+    if bodyCount == 0:
+        Delete.Execute(ComponentSelection.Create(GetRootPart().Components[n]))
+    n -=1
+    if n == -1:
+        break
 
-numo = GetRootPart().Components.Count
-c= numo
-while c > 0:
-    numi = GetRootPart().Components[c-1].Content.Bodies[:]
-    if len(numi)==0:       
-        selectedComp = ComponentSelection.Create( GetRootPart().Components[c-1] ) 
-        Delete.Execute(selectedComp)
-    c-=1
-    
-# UNCOMMENT following to avoid circle Entry inlet and Exit    
-selectedBodies = BodySelection.Create(combinedAndMergedComp.Content.Bodies)
-result = Combine.Merge(selectedBodies)
+#######################################################################################
+
+# new approach to Merge Bodies
+numTwoDBodies = twoDFinalComp.Content.Bodies.Count-1
+while numTwoDBodies > 0:
+    targets = BodySelection.Create(twoDFinalComp.Content.Bodies[0])
+    tools = BodySelection.Create(twoDFinalComp.Content.Bodies[numTwoDBodies])
+    result = Combine.Merge(targets, tools)
+    numTwoDBodies -=1
+    if numTwoDBodies == 0:
+        break
+
+#######################################################################################
+
 
 #####################################################################################
 # Create Component and activate it
@@ -790,11 +779,18 @@ ColorHelper.SetColor(Selection.CreateByNames('Substrate'), Color.FromArgb(255, 1
 # EndBlock
 
 # Extrude-Cut 2D Final sutructure through substrate 
-selection=FaceSelection.Create( combinedAndMergedComp.Content.Bodies[0].Faces[0] )
+selection=FaceSelection.Create( twoDFinalComp.Content.Bodies[0].Faces[0] )
 options = ExtrudeFaceOptions()
 options.ExtrudeType = ExtrudeType.Cut
 result = ExtrudeFaces.Execute(selection, -hEtch , options)
 # EndBlock
+
+# Modify Color
+selection = FaceSelection.Create(Face2)
+ColorHelper.SetColor(selection, Color.FromArgb(255, 128, 255, 255))
+# EndBlock
+
+
 
 #####################################################################################
 
@@ -804,3 +800,5 @@ mode = ViewHelper.ViewProjection.Isometric
 result = ViewHelper.SetProjection(mode)
 ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
 # EndBlock
+
+

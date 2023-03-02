@@ -1,6 +1,6 @@
 # 07 2D Final
 # Create the combined final fluid domain structures in two dimensions.
-# Emrah Dursun. 23/02/2023. 
+# Emrah Dursun. 02/03/2023.
 # Python Script, API Version = V22
 from SpaceClaim.Api.V22.Geometry import Point
 import math
@@ -510,55 +510,56 @@ ComponentHelper.SetActive(multiEnteringChannelComp)
 scaleFactorX=1
 scaleFactorY= Parameters.Scale_Channel_Along_Y
 
-
 def CurvedChannel (splEn, splLen, channelWidthS, periodicityS):    
     # Set Sketch Plane
     result = ViewHelper.SetSketchPlane(Plane.PlaneXY)
+    chamferRadius = splLen - UM(200)
     cwS=channelWidthS
     perS = periodicityS/2
     # Define Points for Sketch Splines
     
     startA = Point.Create(  MM(0),                             0,           0)
     startAa= Point.Create(  MM(0),                             splEn ,      0)
+    
     endA   = Point.Create(  MM(cwS),                              0,           0)
     endAa  = Point.Create(  MM(cwS),                              splEn,       0)
+    
     startB = Point.Create(  MM(perS-cwS/2),         splLen,      0)
     startBb= Point.Create(  MM(perS-cwS/2),         splLen-splEn,0)
+    
     endB   = Point.Create(  MM(perS+cwS/2),                          splLen,      0)
     endBb  = Point.Create(  MM(perS+cwS/2),                          splLen-splEn,0)
+    
     startC = Point.Create(  MM(periodicityS),        0,              0)
     startCc= Point.Create(  MM(periodicityS),        splEn,          0)    
+    
     endC   = Point.Create(  MM(periodicityS+cwS),     0,              0)
     endCc  = Point.Create(  MM(periodicityS+cwS),     splEn,          0)    
+    
     startD = Point.Create(  MM(perS+cwS/2),           splLen,         0)
-    startDd= Point.Create(  MM(perS+cwS/2),           splLen-splEn,   0)    
+    startDd= Point.Create(  MM(perS+cwS/2),           splLen-splEn,   0)
+    
     endD   = Point.Create(  MM(perS+3*cwS/2), splLen,         0)
     endDd  = Point.Create(  MM(perS+3*cwS/2), splLen-splEn,   0)    
     
+   #these are just the point locations that i want     
+    endRrrrrrr       = Point.Create( MM(perS+cwS/2) - UM(740) ,    chamferRadius - UM(335) ,        0)
+    endRrrrrr       = Point.Create( MM(perS+cwS/2) - UM(417) ,    chamferRadius - UM(236) ,        0)
+    endRrrrr        = Point.Create( MM(perS+cwS/2) - UM(60) ,      chamferRadius - UM(35.5),         0)
+    endRrrr         = Point.Create( MM(perS+cwS/2) - UM(42) ,      chamferRadius - UM(15.5),         0)
+    endRrr          = Point.Create( MM(perS+cwS/2) - UM(32),      chamferRadius - UM(6.5),          0)
+    endRr           = Point.Create( MM(perS+cwS/2) - UM(20),         chamferRadius - UM(2),           0)
+    endR            = Point.Create( MM(perS+cwS/2) ,                    chamferRadius,                         0)
     
-#    #these are just the point locations that i want     
-#    endRrrrrrrrr    = Point.Create( MM(per+cw/2) - UM(120.0134) ,     splLen - UM(474.359) ,  0)
-#    endRrrrrrrr     = Point.Create( MM(per+cw/2) - UM(74.648) ,       splLen - UM(348.2007),  0)
-#    endRrrrrrr      = Point.Create( MM(per+cw/2) - UM(37.8512) ,      splLen - UM(235.23) ,   0)
-#    endRrrrrr       = Point.Create( MM(per+cw/2) - UM(20.8406) ,      splLen - UM(170.121) ,   0)
-#    endRrrrr        = Point.Create( MM(per+cw/2) - UM(16.367) ,      splLen - UM(149.664),         0)
-#    endRrrr         = Point.Create( MM(per+cw/2) - UM(12) ,      splLen - UM(135),         0)
-#    endRrr          = Point.Create( MM(per+cw/2) - UM(7.4),         splLen - UM(128),        0)
-#    endRr           = Point.Create( MM(per+cw/2) - UM(2),             splLen - UM(124.7),           0)
-#    endR            = Point.Create( MM(per+cw/2) ,                    splLen - UM(124.5),           0)
-    
-#    #these are just the point locations that i want 
-#    endMrrrrrrrr    = Point.Create( MM(per+cw/2) + UM(120.0134) ,     splLen - UM(474.359) ,  0)
-#    endMrrrrrrr     = Point.Create( MM(per+cw/2) + UM(74.648) ,       splLen - UM(348.2007),  0)
-#    endMrrrrrr      = Point.Create( MM(per+cw/2) + UM(37.8512) ,      splLen - UM(235.23) ,   0)
-#    endMrrrrr       = Point.Create( MM(per+cw/2) + UM(20.8406) ,      splLen - UM(170.121) ,   0)
-#    endMrrrr        = Point.Create( MM(per+cw/2) + UM(16.367) ,      splLen - UM(149.66),         0)
-#    endMrrr         = Point.Create( MM(per+cw/2) + UM(12) ,      splLen - UM(135),         0)
-#    endMrr          = Point.Create( MM(per+cw/2) + UM(7.4),         splLen - UM(128),        0)
-#    endMr           = Point.Create( MM(per+cw/2) + UM(2),             splLen - UM(124.7),           0)
-#    endM            = Point.Create( MM(per+cw/2) ,                    splLen - UM(124.5),           0)
+    #these are just the point locations that i want 
+    endMrrrrrr       = Point.Create( MM(perS+cwS/2) + UM(740) ,   chamferRadius - UM(335) ,    0)
+    endMrrrrr       = Point.Create( MM(perS+cwS/2) + UM(417) ,   chamferRadius - UM(236) ,    0)
+    endMrrrr        = Point.Create( MM(perS+cwS/2) + UM(60) ,     chamferRadius - UM(35.5),     0)
+    endMrrr         = Point.Create( MM(perS+cwS/2) + UM(42) ,     chamferRadius - UM(15.5),     0)
+    endMrr          = Point.Create( MM(perS+cwS/2) + UM(32),     chamferRadius - UM(6.5),        0)
+    endMr           = Point.Create( MM(perS+cwS/2) + UM(20),        chamferRadius - UM(2),           0)
+    endM            = Point.Create( MM(perS+cwS/2) ,                    chamferRadius,                         0)
       
-    
     # Sketch Line 1st and 2nd
     SketchLine.Create(startA, endA)
     SketchLine.Create(startB, endB)
@@ -571,21 +572,21 @@ def CurvedChannel (splEn, splLen, channelWidthS, periodicityS):
     points = [startA, startAa, startBb, startB]
     SketchNurbs.CreateFrom3DPoints(False, points)
     
-    # Sketch Spline 2nd
-    points = [endA, endAa,  endBb, endB]
-    SketchNurbs.CreateFrom3DPoints(False, points)
-
-#    #Sketch Spline 2nd Curved        
-#    points = [endA, endAa, endRrrrrrrrr, endRrrrrrrr, endRrrrrrr,  endRrrrrr, endRrrrr, endRrrr, endRrr, endRr, endR]
+#    # Sketch Spline 2nd
+#    points = [endA, endAa,  endBb, endB]
 #    SketchNurbs.CreateFrom3DPoints(False, points)
+
+    #Sketch Spline 2nd Curved        
+    points = [endA, endAa , endRrrrrrr, endRrrrrr, endRrrrr, endRrrr, endRrr, endRr, endR]
+    SketchNurbs.CreateFrom3DPoints(False, points)
     
-#    # Sketch Spline 3rd Curved
-#    points = [startC, startCc, endMrrrrrrrr, endMrrrrrrr, endMrrrrrr,  endMrrrrr, endMrrrr, endMrrr, endMrr, endMr, endM]
-#    SketchNurbs.CreateFrom3DPoints(False, points)
-
-    # Sketch Spline 3rd
-    points = [startC, startCc, startDd, startD]
+    # Sketch Spline 3rd Curved
+    points = [startC, startCc, endMrrrrrr, endMrrrrr, endMrrrr, endMrrr, endMrr, endMr, endM]
     SketchNurbs.CreateFrom3DPoints(False, points)
+
+#    # Sketch Spline 3rd
+#    points = [startC, startCc, startDd, startD]
+#    SketchNurbs.CreateFrom3DPoints(False, points)
     
     # Sketch Spline 4th
     points = [endC, endCc, endDd, endD]
@@ -645,7 +646,7 @@ def CopyAndTranslate_Scale(body, translation, scaleFactorX, scaleFactorY):
     if (result.Success == True):
         newBody = result.CreatedObjects[0]        
         Move.Translate(Selection.Create(newBody), translation, MoveOptions())        
-        position=multiEnteringChannelComp.Content.Bodies[t+1].Edges[6].GetChildren[ICurvePoint]()[0].Position
+        position=multiEnteringChannelComp.Content.Bodies[t+1].Edges[0].GetChildren[ICurvePoint]()[0].Position
         selectionScale=Selection.Create(result.CreatedObjects[0])
         #Scale along x axis but, not recommended to play wirh scaleFactorX; so it can mis allign the cell connections
         result = Scale.Execute(selectionScale,Point.Create(position.X, position.Y, position.Z), Direction.DirX ,scaleFactorX)
