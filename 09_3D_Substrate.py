@@ -742,18 +742,6 @@ twoDFinalComp = ComponentHelper.CreateAtRoot("2D Final")
 selectedBodies = BodySelection.Create(GetRootPart().GetAllBodies())
 result = ComponentHelper.MoveBodiesToComponent( selectedBodies ,twoDFinalComp , False , None)
 
-numComp = GetRootPart().Components.Count
-n = numComp-1
-while 0 < numComp :
-    bodyCount = GetRootPart().Components[n].Content.Bodies.Count
-    if bodyCount == 0:
-        Delete.Execute(ComponentSelection.Create(GetRootPart().Components[n]))
-    n -=1
-    if n == -1:
-        break
-
-#######################################################################################
-
 # new approach to Merge Bodies
 numTwoDBodies = twoDFinalComp.Content.Bodies.Count-1
 while numTwoDBodies > 0:
@@ -763,9 +751,7 @@ while numTwoDBodies > 0:
     numTwoDBodies -=1
     if numTwoDBodies == 0:
         break
-
 #######################################################################################
-
 
 #####################################################################################
 # Create Component and activate it
@@ -791,6 +777,23 @@ ColorHelper.SetColor(selection, Color.FromArgb(255, 128, 255, 255))
 # EndBlock
 
 
+#######################################################################################
+
+#####################################################################################
+        
+def deleteEmptyComponets():
+    numComp = GetRootPart().Components.Count
+    n = numComp-1
+    while 0 < numComp :
+        bodyCount = GetRootPart().Components[n].Content.Bodies.Count
+        if bodyCount == 0:
+            Delete.Execute(ComponentSelection.Create(GetRootPart().Components[n]))
+        n -=1
+        if n == -1:
+            break
+   
+deleteEmptyComponets()
+
 
 #####################################################################################
 
@@ -800,5 +803,3 @@ mode = ViewHelper.ViewProjection.Isometric
 result = ViewHelper.SetProjection(mode)
 ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
 # EndBlock
-
-
