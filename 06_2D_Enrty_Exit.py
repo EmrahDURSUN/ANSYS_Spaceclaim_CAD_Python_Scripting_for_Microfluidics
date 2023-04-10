@@ -1,6 +1,7 @@
 # 06 2D Entry Exit
 # Create the fluid domain of the entry and exit channel structures in two dimensions.
 # Emrah Dursun. 02/03/2023.
+# Emrah Dursun. 07/04/2023.
 from SpaceClaim.Api.V22.Geometry import Point
 import math
 
@@ -10,7 +11,7 @@ periodicity=Parameters.Periodicity
 subThick=Parameters.SubsThickness
 hCr1=Parameters.ChromiumForAdhesion
 hAu=Parameters.GoldLayer
-#hCr2=Parameters.ChromiumForSurfacePassivationm
+hCr2=Parameters.ChromiumForSurfacePassivation
 radius=Parameters.Radius
 width=Parameters.Width 
 angle=Parameters.Angle
@@ -21,10 +22,11 @@ dnaT = Parameters.DNA
 opRegion = Parameters.OpenRegion
 channelWidth=Parameters.Channel_Width
 numXElements=Parameters.X_direction_repeat
-numZElements=Parameters.Z_direction_repeat
+numYElements=Parameters.Y_direction_repeat
 fluidChipLength = Parameters.FluidChip_Length
 fluidChipWidth = Parameters.FluidChip_Width
-scaleFactorY= Parameters.Scale_Channel_Along_Y
+scaleChannelHeight = Parameters.ScaleChannelHeight
+innerCurveState = Parameters.InnerCurveState
 scaleFactorX=1
 numOfEntryPins = Parameters.Num_of_Entry_Pins
 # End Parameters
@@ -37,209 +39,66 @@ enterExitComp = ComponentHelper.CreateAtRoot("2D_Entry_Exit_Pins")
 ComponentHelper.SetActive(enterExitComp)
 
 # Parameter modifications
-# half Length half widht
 hWi = fluidChipWidth/2
 hLe = fluidChipLength/2
-
-#
 circleRadius = MM(0.5)
 circleGap = MM(3)
 circleStartY = -(-hLe+(2*circleGap))
-#number of inlets 4
-numInlet = numOfEntryPins
-circleStartX= -hWi + ( ( fluidChipWidth-((numInlet-1)*circleGap)) / 2 )
+circleStartX= -hWi + ( ( fluidChipWidth-((numOfEntryPins-1)*circleGap)) / 2 )
 
 # Parameter modifications for entering Channels
 scaleFactorX=1
-scaleFactorY= Parameters.Scale_Channel_Along_Y
-
-strech = scaleFactorY
-distanceCellY = (numZElements*periodicity)/2
-numOfChannelLayers = math.log(numXElements,2)
+totalLengthOfCellOnYAxis = ( numYElements / 2) * periodicity 
+numOfCellChannelLayers = math.log(numXElements,2)
 
 # Determine the distance between entering inlet and channel inlet
-distanceChannelsY = 0
+totalLengthOfCellChannelsOnYAxis = 0
 z = 0
-while z < numOfChannelLayers:
-    result = ( 2 * periodicity ) * (math.pow(2,z))
-    distanceChannelsY += result    
-    strech*=2
+while z < numOfCellChannelLayers:
+    result = ( periodicity * scaleChannelHeight ) * (math.pow(2,z))
+    totalLengthOfCellChannelsOnYAxis += result    
     z = z + 1
 
-distanceChannelsY = distanceChannelsY*scaleFactorY
+totalLengthOfCellPlusChannelsOnYAxis = totalLengthOfCellChannelsOnYAxis + totalLengthOfCellOnYAxis 
+totalGapBetweenEntryPinsAndChannelEnd = circleStartY - totalLengthOfCellPlusChannelsOnYAxis
 
-distanceSumCellChannelY = distanceChannelsY+distanceCellY
-distanceGapEnterCelChannelY= circleStartY - distanceSumCellChannelY
-
-print(distanceGapEnterCelChannelY)
-
-finalChannelWidth = channelWidth * math.pow(2, numOfChannelLayers)
-print(finalChannelWidth)
+finalCellChannelWidth = channelWidth * math.pow ( 2, numOfCellChannelLayers )
 
 # Set Sketch Plane
 sectionPlane = Plane.PlaneXY
 result = ViewHelper.SetSketchPlane(sectionPlane, None)
 
-## run nested while loops to create circles at the entry and exit locations
-#m=0
-#while m < 2:
-#    t=0
-#    while t < numInlet:
-#        # Sketch Circle
-#        origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
-#        result = SketchCircle.Create(origin, circleRadius)
-#        t+=1
-#    circleStartY=-1*circleStartY
-#    m+=1
+# run nested while loops to create circles at the entry and exit locations
+m=0
+while m < 2:
+    t=0
+    while t < numOfEntryPins:
+        # Sketch Circle
+        origin = Point2D.Create(circleStartX + t*circleGap,  circleStartY)
+        result = SketchCircle.Create(origin, circleRadius)
+        t+=1
+    circleStartY=-1*circleStartY
+    m+=1
 
-## Solidify Sketch
-#mode = InteractionMode.Solid
-#result = ViewHelper.SetViewMode(mode, None)
-## EndBlock
+# Solidify Sketch
+mode = InteractionMode.Solid
+result = ViewHelper.SetViewMode(mode, None)
+# EndBlock
 
 ComponentHelper.SetRootActive()
 # comp = ComponentHelper.CopyToRoot(comp)
 
 ########################################################################################
-
 ########################################################################################
 
-# Create Component and activate it
-multiEnteringChannelComp = ComponentHelper.CreateAtRoot("2D Multiple Entry Exit Channel")
-ComponentHelper.SetActive(multiEnteringChannelComp)
-
-scaleFactorX=1
-scaleFactorY= Parameters.Scale_Channel_Along_Y
-
-def CurvedChannel (splEn, splLen, channelWidthS, periodicityS):    
-    # Set Sketch Plane
-    result = ViewHelper.SetSketchPlane(Plane.PlaneXY)
-    chamferRadius = splLen - UM(200)
-    cwS=channelWidthS
-    perS = periodicityS/2
-    # Define Points for Sketch Splines
-    
-    startA = Point.Create(  MM(0),                             0,           0)
-    startAa= Point.Create(  MM(0),                             splEn ,      0)
-    
-    endA   = Point.Create(  MM(cwS),                              0,           0)
-    endAa  = Point.Create(  MM(cwS),                              splEn,       0)
-    
-    startB = Point.Create(  MM(perS-cwS/2),         splLen,      0)
-    startBb= Point.Create(  MM(perS-cwS/2),         splLen-splEn,0)
-    
-    endB   = Point.Create(  MM(perS+cwS/2),                          splLen,      0)
-    endBb  = Point.Create(  MM(perS+cwS/2),                          splLen-splEn,0)
-    
-    startC = Point.Create(  MM(periodicityS),        0,              0)
-    startCc= Point.Create(  MM(periodicityS),        splEn,          0)    
-    
-    endC   = Point.Create(  MM(periodicityS+cwS),     0,              0)
-    endCc  = Point.Create(  MM(periodicityS+cwS),     splEn,          0)    
-    
-    startD = Point.Create(  MM(perS+cwS/2),           splLen,         0)
-    startDd= Point.Create(  MM(perS+cwS/2),           splLen-splEn,   0)
-    
-    endD   = Point.Create(  MM(perS+3*cwS/2), splLen,         0)
-    endDd  = Point.Create(  MM(perS+3*cwS/2), splLen-splEn,   0)    
-    
-   #these are just the point locations that i want     
-    endRrrrrrr       = Point.Create( MM(perS+cwS/2) - UM(740) ,    chamferRadius - UM(335) ,        0)
-    endRrrrrr       = Point.Create( MM(perS+cwS/2) - UM(417) ,    chamferRadius - UM(236) ,        0)
-    endRrrrr        = Point.Create( MM(perS+cwS/2) - UM(60) ,      chamferRadius - UM(35.5),         0)
-    endRrrr         = Point.Create( MM(perS+cwS/2) - UM(42) ,      chamferRadius - UM(15.5),         0)
-    endRrr          = Point.Create( MM(perS+cwS/2) - UM(32),      chamferRadius - UM(6.5),          0)
-    endRr           = Point.Create( MM(perS+cwS/2) - UM(20),         chamferRadius - UM(2),           0)
-    endR            = Point.Create( MM(perS+cwS/2) ,                    chamferRadius,                         0)
-    
-    #these are just the point locations that i want 
-    endMrrrrrr       = Point.Create( MM(perS+cwS/2) + UM(740) ,   chamferRadius - UM(335) ,    0)
-    endMrrrrr       = Point.Create( MM(perS+cwS/2) + UM(417) ,   chamferRadius - UM(236) ,    0)
-    endMrrrr        = Point.Create( MM(perS+cwS/2) + UM(60) ,     chamferRadius - UM(35.5),     0)
-    endMrrr         = Point.Create( MM(perS+cwS/2) + UM(42) ,     chamferRadius - UM(15.5),     0)
-    endMrr          = Point.Create( MM(perS+cwS/2) + UM(32),     chamferRadius - UM(6.5),        0)
-    endMr           = Point.Create( MM(perS+cwS/2) + UM(20),        chamferRadius - UM(2),           0)
-    endM            = Point.Create( MM(perS+cwS/2) ,                    chamferRadius,                         0)
-      
-    # Sketch Line 1st and 2nd
-    SketchLine.Create(startA, endA)
-    SketchLine.Create(startB, endB)
-    
-    # Sketch Line 3rd and 4th
-    SketchLine.Create(startC, endC)
-    SketchLine.Create(startD, endD)
-    
-    # Sketch Spline 1st
-    points = [startA, startAa, startBb, startB]
-    SketchNurbs.CreateFrom3DPoints(False, points)
-    
-#    # Sketch Spline 2nd
-#    points = [endA, endAa,  endBb, endB]
-#    SketchNurbs.CreateFrom3DPoints(False, points)
-
-    #Sketch Spline 2nd Curved        
-    points = [endA, endAa , endRrrrrrr, endRrrrrr, endRrrrr, endRrrr, endRrr, endRr, endR]
-    SketchNurbs.CreateFrom3DPoints(False, points)
-    
-    # Sketch Spline 3rd Curved
-    points = [startC, startCc, endMrrrrrr, endMrrrrr, endMrrrr, endMrrr, endMrr, endMr, endM]
-    SketchNurbs.CreateFrom3DPoints(False, points)
-
-#    # Sketch Spline 3rd
-#    points = [startC, startCc, startDd, startD]
-#    SketchNurbs.CreateFrom3DPoints(False, points)
-    
-    # Sketch Spline 4th
-    points = [endC, endCc, endDd, endD]
-    SketchNurbs.CreateFrom3DPoints(False, points)
-    # EndBlock - Define Points for Sketch Splines
-    
-    # Solidify Sketch
-    ViewHelper.SetViewMode(InteractionMode.Solid, None)
-
-numOfEnteringChannelLayers=math.log(numOfEntryPins ,2)
-cwS = finalChannelWidth / math.pow(2, numOfEnteringChannelLayers)
-lengthOfSpline = MM(1)
-CurvedChannel(MM(0.001), MM( lengthOfSpline ), MM(cwS), MM(circleGap))
-
-
-# Copy and Translate the already created base steps
+# Declare a function to copy, translate created base steps
 def CopyAndTranslate_AlongX(body, translationX):   
     result = Copy.Execute(body)    
     if (result.Success == True):
         newBody = result.CreatedObjects[0]        
         Move.Translate(Selection.Create(newBody), translationX, MoveOptions())      
         return newBody
-    
-#*#
-#numSteps = numZElements-1
-#offSetYdirection =(numZElements*(periodicity/2))
-offSetEnteringYdirection = -circleStartY
 
-# Translate Along Y direction as half of the cell-number on Y direction 
-baseBody = multiEnteringChannelComp.Content.Bodies[0]
-selection = BodySelection.Create(baseBody)
-direction = Direction.DirY
-options = MoveOptions()
-options.MaintainOrientation = True
-result = Move.Translate(selection, direction, offSetEnteringYdirection, options)
-# EndBlock
-
-#offSetXdirection = (numXElements*periodicity)-per
-offSetEnteringXdirection = ( (numInlet-1)  * (circleGap/2)) 
-
-# Translate Along Y direction as half of the cell-number on Y direction 
-baseBody = multiEnteringChannelComp.Content.Bodies[0]
-selection = BodySelection.Create(baseBody)
-direction = -Direction.DirX
-options = MoveOptions()
-options.MaintainOrientation = True
-result = Move.Translate(selection, direction, offSetEnteringXdirection, options)
-# EndBlock
-
-# Make a body list
-bodyList = List[IDocObject]()
-bodyList.Add(baseBody)
 
 # Declare a function to copy, translate and scale the base steps
 def CopyAndTranslate_Scale(body, translation, scaleFactorX, scaleFactorY):
@@ -257,52 +116,137 @@ def CopyAndTranslate_Scale(body, translation, scaleFactorX, scaleFactorY):
         return newBody
 
 
-scaleFactorYS = 1
-strechS=scaleFactorYS
-periodicityS = circleGap
-perS = circleGap/2
-# Determine the *Scale factor for Entering splines channels*
-distanceEnteringChannelsY = 0
+# Create Component and activate it
+multiEnteringChannelComp = ComponentHelper.CreateAtRoot("2D Multiple Entry Exit Channel")
+ComponentHelper.SetActive(multiEnteringChannelComp)
+
+scaleFactorX=1
+scaleFactorY= Parameters.ScaleChannelHeight
+
+# modify and define variables
+splineDistance = periodicity * 2.4e-06
+initialEnteringChannelHeight = circleGap
+innerSplineScale = 0.9
+numOfEnteringChannelLayers = math.log(numOfEntryPins ,2)
+cwS = finalCellChannelWidth / math.pow(2, numOfEnteringChannelLayers)
+
+per = circleGap/2
+cw = cwS / 2 
+
+def CurvedChannel (splineDistance, channelHeight, curveState):      
+    # Set Sketch Plane
+    result = ViewHelper.SetSketchPlane(Plane.PlaneXY)
+    # Define Points for Sketch Splines
+    startA = Point.Create(  -per+cw,   0,                    0)
+    startAa= Point.Create(  -per+cw,   splineDistance ,               0)
+    endA   = Point.Create(  -per-cw,   0,                    0)
+    endAa  = Point.Create(  -per-cw,   splineDistance,                0)
+    
+    startB = Point.Create(  -cw*2,       channelHeight,             0)
+    startBb= Point.Create(  -cw*2,       channelHeight-splineDistance,       0)
+    endB   = Point.Create(  cw*2,        channelHeight,             0)
+    endBb  = Point.Create(  cw*2,        channelHeight-splineDistance,       0)
+    
+    startC = Point.Create(  per-cw,     0,                   0)
+    startCc= Point.Create(  per-cw,     splineDistance,               0)    
+    endC   = Point.Create(  per+cw,     0,                   0)
+    endCc  = Point.Create(  per+cw,     splineDistance,               0)    
+    
+    startD    = Point.Create( -splineDistance  ,   channelHeight*innerSplineScale,                 0)
+    startDd  = Point.Create( -splineDistance  ,   (channelHeight-splineDistance)*innerSplineScale,      0)    
+    endD     = Point.Create( splineDistance   ,    channelHeight*innerSplineScale,                0)
+    endDd   = Point.Create( splineDistance   ,    (channelHeight-splineDistance)*innerSplineScale,     0)  
+    
+    # Sketch Straight Lines
+    SketchLine.Create(startA, endA)
+    SketchLine.Create(startB, endB)
+    SketchLine.Create(startC, endC)
+    
+    # Sketch Spline 1st, FarLeft
+    points = [endA, endAa, startBb, startB]
+    SketchNurbs.CreateFrom3DPoints(False, points)
+    
+    # Sketch Spline 2nd, FarRight
+    points = [endC, endCc, endBb, endB]
+    SketchNurbs.CreateFrom3DPoints(False, points)
+    
+    # Sketch Spline 3rd, nearLeft
+    points = [startA, startAa, startDd, startD]
+    SketchNurbs.CreateFrom3DPoints(False, points)
+    
+    # Sketch Spline 4th nearRight
+    points = [startC, startCc, endDd, endD]
+    SketchNurbs.CreateFrom3DPoints(False, points)
+    
+    # Sketch Arch between the inner spline curves
+    startSelPoint = SelectionPoint.Create(multiEnteringChannelComp.Content.Curves[5], innerCurveState)
+    endSelPoint = SelectionPoint.Create(multiEnteringChannelComp.Content.Curves[6], innerCurveState)
+    end = Point2D.Create( endSelPoint.Point.X, endSelPoint.Point.Y)
+    options = SketchArcOptions()
+    options.ArcSense = ArcSense.Normal
+    result = SketchArc.CreateTangentArc( startSelPoint, end, options)    
+    
+    # Solidify Sketch    
+    ViewHelper.SetViewMode(InteractionMode.Solid, None)
+   
+    # Trim Sketch Curve
+    numOfCurves = multiEnteringChannelComp.Content.Curves.Count
+    while numOfCurves > 0:
+        selectedPoint = SelectionPoint.Create(multiEnteringChannelComp.Content.Curves[numOfCurves-1], innerCurveState )
+        result = TrimSketchCurve.Execute(selectedPoint)
+        numOfCurves -= 1
+
+CurvedChannel(splineDistance, initialEnteringChannelHeight, innerCurveState)
+
+# Move to Start Entry Pins Start Location
+offSetEnteringYdirection = circleStartY
+offSetEnteringXdirection = ( ( numOfEntryPins / 2 ) -1 )  *  circleGap  
+baseBody = multiEnteringChannelComp.Content.Bodies[0]
+selectedBaseBody = BodySelection.Create(baseBody)
+directionY = -Direction.DirY
+directionX = -Direction.DirX
+options = MoveOptions()
+options.MaintainOrientation = True
+result = Move.Translate(selectedBaseBody, directionY, offSetEnteringYdirection, options)
+result = Move.Translate(selectedBaseBody, directionX, offSetEnteringXdirection, options)
+# EndBlock
+
+# Make a body list
+bodyList = List[IDocObject]()
+bodyList.Add(baseBody)
+
+# Calculate the scale amount for entering channel height to fill the gap
+initialTotalLengthOfEnteringChannelLayers = 0
 z = 0
-numOfEnteringChannelLayers=math.log(numInlet,2)
+numOfEnteringChannelLayers = math.log( numOfEntryPins, 2 )
 while z < numOfEnteringChannelLayers:
-    result = ( lengthOfSpline ) * (math.pow(2,z))
-    distanceEnteringChannelsY += result    
-#    if z > 0:
-#        BlockBody.Create( Point.Origin, Point.Create(MM(10), MM(total), MM(10)), ExtrudeType.ForceIndependent)
+    result = ( initialEnteringChannelHeight ) * (math.pow(2,z))
+    initialTotalLengthOfEnteringChannelLayers += result    
     z = z + 1
+scaleAmountForEnteringChannelLayersToFillTheGap = totalGapBetweenEntryPinsAndChannelEnd / initialTotalLengthOfEnteringChannelLayers
+# end of calculation
 
-#distanceChannelsY = distanceChannelsY*scaleFactorY
-
-#distanceSumCellChannelY = distanceChannelsY+distanceCellY
-#distanceGapEnterCelChannelY= circleStartY - distanceSumCellChannelY
-
-scaleFactorYS = distanceGapEnterCelChannelY / distanceEnteringChannelsY
-
-# Run a loop to make the steps along the layer height, layer numbers change respect to number of cell, under this section one can also adjust to scale along y-axis
-#distanceGapEnterCelChannelY
-
-strechS=scaleFactorYS
-
-periodicityS = lengthOfSpline
-perS = circleGap/2
-
+scaleFactorX = 1
+scaleFactorY = scaleAmountForEnteringChannelLayersToFillTheGap
+scaledEnteringChannelHeight = scaleAmountForEnteringChannelLayersToFillTheGap * initialEnteringChannelHeight
+periodicityEnteringChannels = circleGap
+halfPeriodicityEnteringChannels = circleGap/2
 t = 0
-numOfEnteringChannelLayers=math.log(numInlet,2)
-while t < numOfEnteringChannelLayers:    
-#    translation = Vector.Create((math.pow(2,t)*(per-channelWidth/2)) - per, strech*((math.pow(2,t) * 2 * periodicity)-2*periodicity), 0 )
-    translation = Vector.Create( (math.pow(2,t) * (perS - cwS/2) ) - perS,    strechS*((math.pow(2,t) * periodicityS)- periodicityS), 0 )   
-    newBody = CopyAndTranslate_Scale(baseBody, translation,scaleFactorX, scaleFactorYS)
-    bodyList.Add(newBody)
+numOfEnteringChannelLayers=math.log(numOfEntryPins,2)
+while t < numOfEnteringChannelLayers: 
+    Xoff = math.pow (2, t ) -1
+    Yoff = math.pow (2, t ) -1
+    translation = Vector.Create( Xoff *(( (periodicityEnteringChannels + cwS ) / 2) - cwS)  ,  scaledEnteringChannelHeight * Yoff,  0 )
+    newBody = CopyAndTranslate_Scale( baseBody, translation, scaleFactorX, scaleAmountForEnteringChannelLayersToFillTheGap )
+    bodyList.Add(newBody)    
     scaleFactorX*=2
-    scaleFactorYS*=2
+    scaleAmountForEnteringChannelLayersToFillTheGap*=2
     t = t + 1
 
 # run nested to loop to create x cell for each layer
-m = numInlet/2
+m = numOfEntryPins/2
 k=0
 n=0
-# 
 while n <numOfEnteringChannelLayers:
     stringName =str('Layer'+n.ToString())
     selectionO = Selection.CreateByNames(stringName)
@@ -336,11 +280,17 @@ result = Mirror.Execute(selection, mirrorPlane, options)
 RenameObject.Execute(BodySelection.Create(multiEnteringChannelComp.Content.Bodies[1]), 'Exit Channels')
 # EndBlock
 
+# Change Object Visibility
+selection = Selection.Create(multiEnteringChannelComp.Content.DatumPlanes[0])
+visibility = VisibilityType.Hide
+inSelectedView = False
+faceLevel = False
+ViewHelper.SetObjectVisibility(selection, visibility, inSelectedView, faceLevel)
+# EndBlock
 
 #######################################################################################
 Selection.Clear()
 ComponentHelper.SetRootActive()
-mode = ViewHelper.ViewProjection.Top
+mode = ViewHelper.ViewProjection.Isometric
 result = ViewHelper.SetProjection(mode)
 ViewHelper.ZoomToEntity(PartSelection.Create(GetRootPart()))
-

@@ -1,7 +1,7 @@
 # 01 2D Single Cell
 # Create two-dimensional fluid region
 # Emrah Dursun. 20/03/2023.
-
+# Emrah Dursun. 05/04/2023.
 from SpaceClaim.Api.V22.Geometry import Point
 import math
 
@@ -19,7 +19,7 @@ channelWidth=Parameters.Channel_Width
 # End Parameters
   
 # Create Component and activate it
-singleCellTwoDComp = ComponentHelper.CreateAtRoot("2D Single Cell")
+singleCellTwoDComp = ComponentHelper.CreateAtRoot("2D Single Cell Cmp")
 ComponentHelper.SetActive(singleCellTwoDComp)
  
 # Allocate points and create a surface operation
@@ -28,10 +28,6 @@ def allocatePoints(distanceAwayFromOrigin, rotationBasedOrigin):
     selectedPoints = Selection.Create(DatumPointCreator.Create(Point.Create(0, MM(distanceAwayFromOrigin), 0)).CreatedPoint)
     move = Move.Rotate(selectedPoints, Line.Create(Point.Origin, Direction.DirZ), rotationBasedOrigin, MoveOptions())
     
-'''' pointsDict is a way to keep track of the DatumPoints that were created in pointAllocateFirst
-so that they can be used later in surfaceCutOperation to define the boundaries of the resulting PlanarBody.
-'''
-
 # Create ring surface with given parameters
 def createRingSurface(ring, nearPoint, farPoint, rotation):
 
@@ -60,7 +56,7 @@ def createRingSurface(ring, nearPoint, farPoint, rotation):
     curves.Add(CurveSegment.Create(end1, end2))
         
     designResult = PlanarBody.Create(Plane.PlaneXY, curves)
-    designBody1 = designResult.CreatedBody.SetName('Surface' + str(ring))
+    designBody1 = designResult.CreatedBody.SetName('Ring' + str(ring))
   
 # Call Create ring surfaces with given parameters
 createRingSurface(1, radius, radius + width, DEG(180) + angle)
@@ -80,7 +76,7 @@ while t < num:
     selectionOthers = BodySelection.Create(singleCellTwoDComp.Content.Bodies[num-1-t])
     result = Combine.Merge( selectionTarget , selectionOthers)
     t+=1
-RenameObject.Execute(BodySelection.Create(singleCellTwoDComp.Content.Bodies[0]), 'Combined_Surface')
+RenameObject.Execute(BodySelection.Create(singleCellTwoDComp.Content.Bodies[0]), 'SingleCellFluidDomain')
 
 # Ending Arrangements
 Selection.Clear()
