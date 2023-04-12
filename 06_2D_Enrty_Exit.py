@@ -27,6 +27,7 @@ fluidChipLength = Parameters.FluidChip_Length
 fluidChipWidth = Parameters.FluidChip_Width
 scaleChannelHeight = Parameters.ScaleChannelHeight
 innerCurveState = Parameters.InnerCurveState
+InnerCurveStateForEntry = Parameters.InnerCurveStateForEntry
 scaleFactorX=1
 numOfEntryPins = Parameters.Num_of_Entry_Pins
 # End Parameters
@@ -89,6 +90,7 @@ ComponentHelper.SetRootActive()
 # comp = ComponentHelper.CopyToRoot(comp)
 
 ########################################################################################
+# End Of Calculations
 ########################################################################################
 
 # Declare a function to copy, translate created base steps
@@ -101,12 +103,12 @@ def CopyAndTranslate_AlongX(body, translationX):
 
 
 # Declare a function to copy, translate and scale the base steps
-def CopyAndTranslate_Scale(body, translation, scaleFactorX, scaleFactorY):
+def CopyAndTranslate_Scale(activeComp,body, translation, scaleFactorX, scaleFactorY):
     result = Copy.Execute(Selection.Create(body))
     if (result.Success == True):
         newBody = result.CreatedObjects[0]        
         Move.Translate(Selection.Create(newBody), translation, MoveOptions())        
-        position=multiEnteringChannelComp.Content.Bodies[t+1].Edges[0].GetChildren[ICurvePoint]()[0].Position
+        position = activeComp.Content.Bodies[t+1].Edges[0].GetChildren[ICurvePoint]()[0].Position
         selectionScale=Selection.Create(result.CreatedObjects[0])
         #Scale along x axis but, not recommended to play wirh scaleFactorX; so it can mis allign the cell connections
         result = Scale.Execute(selectionScale,Point.Create(position.X, position.Y, position.Z), Direction.DirX ,scaleFactorX)
@@ -129,13 +131,14 @@ initialEnteringChannelHeight = circleGap
 innerSplineScale = 0.9
 numOfEnteringChannelLayers = math.log(numOfEntryPins ,2)
 cwS = finalCellChannelWidth / math.pow(2, numOfEnteringChannelLayers)
-
 per = circleGap/2
 cw = cwS / 2 
 
-def CurvedChannel (splineDistance, channelHeight, curveState):      
+def CurvedChannel (activeComp, splineDistance, channelHeight, curveState):
+    
     # Set Sketch Plane
     result = ViewHelper.SetSketchPlane(Plane.PlaneXY)
+    
     # Define Points for Sketch Splines
     startA = Point.Create(  -per+cw,   0,                    0)
     startAa= Point.Create(  -per+cw,   splineDistance ,               0)
@@ -177,10 +180,10 @@ def CurvedChannel (splineDistance, channelHeight, curveState):
     # Sketch Spline 4th nearRight
     points = [startC, startCc, endDd, endD]
     SketchNurbs.CreateFrom3DPoints(False, points)
-    
+        
     # Sketch Arch between the inner spline curves
-    startSelPoint = SelectionPoint.Create(multiEnteringChannelComp.Content.Curves[5], innerCurveState)
-    endSelPoint = SelectionPoint.Create(multiEnteringChannelComp.Content.Curves[6], innerCurveState)
+    startSelPoint = SelectionPoint.Create(activeComp.Content.Curves[5], curveState)
+    endSelPoint = SelectionPoint.Create(activeComp.Content.Curves[6], curveState)
     end = Point2D.Create( endSelPoint.Point.X, endSelPoint.Point.Y)
     options = SketchArcOptions()
     options.ArcSense = ArcSense.Normal
@@ -190,13 +193,14 @@ def CurvedChannel (splineDistance, channelHeight, curveState):
     ViewHelper.SetViewMode(InteractionMode.Solid, None)
    
     # Trim Sketch Curve
-    numOfCurves = multiEnteringChannelComp.Content.Curves.Count
+    numOfCurves = activeComp.Content.Curves.Count
     while numOfCurves > 0:
-        selectedPoint = SelectionPoint.Create(multiEnteringChannelComp.Content.Curves[numOfCurves-1], innerCurveState )
+        selectedPoint = SelectionPoint.Create(activeComp.Content.Curves[numOfCurves-1], curveState )
         result = TrimSketchCurve.Execute(selectedPoint)
         numOfCurves -= 1
 
-CurvedChannel(splineDistance, initialEnteringChannelHeight, innerCurveState)
+
+CurvedChannel(multiEnteringChannelComp, splineDistance, initialEnteringChannelHeight, InnerCurveStateForEntry)
 
 # Move to Start Entry Pins Start Location
 offSetEnteringYdirection = circleStartY
@@ -237,7 +241,7 @@ while t < numOfEnteringChannelLayers:
     Xoff = math.pow (2, t ) -1
     Yoff = math.pow (2, t ) -1
     translation = Vector.Create( Xoff *(( (periodicityEnteringChannels + cwS ) / 2) - cwS)  ,  scaledEnteringChannelHeight * Yoff,  0 )
-    newBody = CopyAndTranslate_Scale( baseBody, translation, scaleFactorX, scaleAmountForEnteringChannelLayersToFillTheGap )
+    newBody = CopyAndTranslate_Scale( multiEnteringChannelComp, baseBody, translation, scaleFactorX, scaleAmountForEnteringChannelLayersToFillTheGap )
     bodyList.Add(newBody)    
     scaleFactorX*=2
     scaleAmountForEnteringChannelLayersToFillTheGap*=2

@@ -30,6 +30,7 @@ fluidChipLength = Parameters.FluidChip_Length
 fluidChipWidth = Parameters.FluidChip_Width
 scaleChannelHeight = Parameters.ScaleChannelHeight
 innerCurveState = Parameters.InnerCurveState
+InnerCurveStateForEntry = Parameters.InnerCurveStateForEntry
 numOfEntryPins = Parameters.Num_of_Entry_Pins
 scaleFactorX=1
 # End Parameters
@@ -144,6 +145,7 @@ while multiCellTwoDComp.Content.Bodies.Count > 1:
 
 # Run a loop to create cell array on X axis
 baseMergedBody = multiCellTwoDComp.Content.Bodies[0]
+
 x = 0
 while x < numXElements:
     translationX = Vector.Create( x*periodicity, 0, 0 )
@@ -152,7 +154,6 @@ while x < numXElements:
     x = x + 1
 #Delete  orginal reference body
 multiCellTwoDComp.Content.Bodies[0].Delete()
-
 
 ######################################################################
 # End Of MULTI Cell Fluid Domain
@@ -171,7 +172,7 @@ def CopyAndTranslate_Along(body, translation):
         Move.Translate(Selection.Create(newBody), translation, MoveOptions())
         RenameObject.Execute(Selection.Create(newBody), 'Chanbel Along X '+k.ToString())
         return newBody
-
+    
 # Declare a function to copy, translate and scale the base body along two direction
 def CopyAndTranslate_Scale(activeComp, body, translation, scaleFactorX, scaleFactorY):
     result = Copy.Execute(Selection.Create(body))
@@ -187,9 +188,7 @@ def CopyAndTranslate_Scale(activeComp, body, translation, scaleFactorX, scaleFac
         RenameObject.Execute(Selection.Create(newBody), 'Layer'+t.ToString())
         return newBody
 
-
 def CurvedChannel (activeComp, splineDistance, channelHeight, curveState):
-    
     # Set Sketch Plane
     result = ViewHelper.SetSketchPlane(Plane.PlaneXY)
     
@@ -236,8 +235,8 @@ def CurvedChannel (activeComp, splineDistance, channelHeight, curveState):
     SketchNurbs.CreateFrom3DPoints(False, points)
         
     # Sketch Arch between the inner spline curves
-    startSelPoint = SelectionPoint.Create(activeComp.Content.Curves[5], innerCurveState)
-    endSelPoint = SelectionPoint.Create(activeComp.Content.Curves[6], innerCurveState)
+    startSelPoint = SelectionPoint.Create(activeComp.Content.Curves[5], curveState)
+    endSelPoint = SelectionPoint.Create(activeComp.Content.Curves[6], curveState)
     end = Point2D.Create( endSelPoint.Point.X, endSelPoint.Point.Y)
     options = SketchArcOptions()
     options.ArcSense = ArcSense.Normal
@@ -249,7 +248,7 @@ def CurvedChannel (activeComp, splineDistance, channelHeight, curveState):
     # Trim Sketch Curve
     numOfCurves = activeComp.Content.Curves.Count
     while numOfCurves > 0:
-        selectedPoint = SelectionPoint.Create(activeComp.Content.Curves[numOfCurves-1], innerCurveState )
+        selectedPoint = SelectionPoint.Create(activeComp.Content.Curves[numOfCurves-1], curveState )
         result = TrimSketchCurve.Execute(selectedPoint)
         numOfCurves -= 1
         
@@ -319,7 +318,6 @@ while numberOfUnmergedBodies > 0:
 
 ######################################################################
 # Create a componet and move all bodies in it and Merge them
-
 
 # Create Datum Plane
 result = DatumPlaneCreator.Create(Point.Origin, Direction.DirY)
@@ -430,7 +428,14 @@ cwS = finalCellChannelWidth / math.pow(2, numOfEnteringChannelLayers)
 per = circleGap/2
 cw = cwS / 2 
 
-CurvedChannel(multiEnteringChannelComp ,splineDistance, initialEnteringChannelHeight, innerCurveState)
+# if curved entry selected
+CurvedChannel(multiEnteringChannelComp, splineDistance, initialEnteringChannelHeight, InnerCurveStateForEntry)
+
+# if rectangular is choosen
+rectangularEntryExit = Parameters.RectangularEntryExit
+
+rectOrigin = Point.Create(-finalCellChannelWidth/2, totalLengthOfCellPlusChannelsOnYAxis, 0 )
+RectangularSurface.Create(finalCellChannelWidth, totalGapBetweenEntryPinsAndChannelEnd, rectOrigin)
 
 # Move to Start Entry Pins Start Location
 offSetEnteringYdirection = circleStartY
@@ -487,7 +492,7 @@ while n <numOfEnteringChannelLayers:
     k=0
     while k < m:
         translationX = Vector.Create((math.pow(2,n) * k * 2 * circleGap ), 0 ,0)
-        newBody = CopyAndTranslate_Along( selectionO, translationX)
+        newBody = CopyAndTranslate_Along ( selectionO, translationX)
         bodyList.Add(newBody)
         k+=1    
     m/=2
@@ -501,7 +506,6 @@ if multiEnteringChannelComp.Content.Bodies.Count > 1 :
     result = Combine.Merge(selection)
 
 RenameObject.Execute(BodySelection.Create(multiEnteringChannelComp.Content.Bodies[0]), 'Entry Channels')
-
 
 # Create Datum Plane
 result = DatumPlaneCreator.Create(Point.Origin, Direction.DirY)
@@ -522,6 +526,9 @@ inSelectedView = False
 faceLevel = False
 ViewHelper.SetObjectVisibility(selection, visibility, inSelectedView, faceLevel)
 # EndBlock
+
+#######################################################################
+#######################################################################
 
 #Create a parent componet and move all bodies in it
 twoFinalComp = ComponentHelper.CreateAtRoot("2D Final Component")
@@ -548,10 +555,9 @@ def deleteEmptyComponets():
             Delete.Execute(ComponentSelection.Create(GetRootPart().Components[n]))
         n -=1
         if n == -1:
-            break
-   
-deleteEmptyComponets()
+            break   
 
+deleteEmptyComponets()
 
 Selection.Clear()
 ComponentHelper.SetRootActive()
